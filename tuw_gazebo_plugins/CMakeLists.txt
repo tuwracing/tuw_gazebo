@@ -79,6 +79,7 @@ catkin_package(
     tuw_gazebo_ros_joint_state_publisher
     map_common
     cone_detection_sim
+    tuw_gazebo_ros_local_map
     tuw_gazebo_ros_map
     tuw_gazebo_ros_odom
   CATKIN_DEPENDS
@@ -142,6 +143,9 @@ target_link_libraries(map_common tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catk
 
 add_library(cone_detection_sim src/cone_detection_sim.cpp)
 target_link_libraries(cone_detection_sim tuw_gazebo_ros_utils map_common ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+add_library(tuw_gazebo_ros_local_map src/gazebo_ros_local_map.cpp)
+target_link_libraries(tuw_gazebo_ros_local_map tuw_gazebo_ros_utils map_common ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_library(tuw_gazebo_ros_map src/gazebo_ros_map.cpp)
 target_link_libraries(tuw_gazebo_ros_map tuw_gazebo_ros_utils map_common ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
