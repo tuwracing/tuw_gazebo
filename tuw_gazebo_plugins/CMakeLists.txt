@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(tuw_gazebo_plugins)
 
-add_compile_options(-std=c++14  -fext-numeric-literals -lmlg) ## for c++ 2014
+add_compile_options(-std=c++14)
 
 SET(CMAKE_BUILD_TYPE Release)
 
@@ -17,8 +17,6 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
 MESSAGE( STATUS "CMAKE_CXX_FLAGS_DEBUG:         " ${CMAKE_CXX_FLAGS_DEBUG} )
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
-
-
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -30,7 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   nav_msgs
   gazebo_msgs
-  tuw_nav_msgs
+  tuw_object_msgs
   tuw_vehicle_msgs
 )
 
@@ -79,7 +77,6 @@ catkin_package(
     tuw_gazebo_ros_joint_state_publisher
     map_common
     cone_detection_sim
-    tuw_gazebo_ros_local_map
     tuw_gazebo_ros_map
     tuw_gazebo_ros_odom
   CATKIN_DEPENDS
@@ -104,55 +101,53 @@ link_directories(
   ${OGRE-Paging_LIBRARY_DIRS}
 )
 
+set(DEP_LIBS ${catkin_LIBRARIES} ${Boost_LIBRARIES} gazebo)
+
 ## Utils
 add_library(tuw_gazebo_ros_utils src/gazebo_ros_utils.cpp src/noise_sim_model.cpp)
-target_link_libraries(tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_definitions(-fPIC) # what is this for?
 
 ## Plugins
 add_library(tuw_gazebo_ros_diff_drive src/gazebo_ros_diff_drive.cpp)
-target_link_libraries(tuw_gazebo_ros_diff_drive tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_diff_drive tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_laser src/gazebo_ros_laser.cpp)
-target_link_libraries(tuw_gazebo_ros_laser tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_laser tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_gpu_laser src/gazebo_ros_gpu_laser.cpp)
-target_link_libraries(tuw_gazebo_ros_gpu_laser tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_gpu_laser tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_imu9dof src/gazebo_ros_imu9dof.cpp)
-target_link_libraries(tuw_gazebo_ros_imu9dof tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_imu9dof tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_bridge_model src/gazebo_ros_bridge_model.cpp)
-target_link_libraries(tuw_gazebo_ros_bridge_model tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_bridge_model tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_human_receiver src/gazebo_ros_human_receiver.cpp)
 target_link_libraries(tuw_gazebo_ros_human_receiver ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 add_library(tuw_gazebo_tire_model src/tire_model.cpp)
-target_link_libraries(tuw_gazebo_tire_model tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_tire_model tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_rwd src/gazebo_ros_rwd.cpp src/HV_battery.cpp src/aero_forces.cpp)
-target_link_libraries(tuw_gazebo_ros_rwd tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_rwd tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_encoder src/gazebo_ros_encoder.cpp)
-target_link_libraries(tuw_gazebo_ros_encoder tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_encoder tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(map_common src/map_common.cpp)
-target_link_libraries(map_common tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(map_common tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(cone_detection_sim src/cone_detection_sim.cpp)
-target_link_libraries(cone_detection_sim tuw_gazebo_ros_utils map_common ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-
-add_library(tuw_gazebo_ros_local_map src/gazebo_ros_local_map.cpp)
-target_link_libraries(tuw_gazebo_ros_local_map tuw_gazebo_ros_utils map_common ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(cone_detection_sim tuw_gazebo_ros_utils map_common ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_map src/gazebo_ros_map.cpp)
-target_link_libraries(tuw_gazebo_ros_map tuw_gazebo_ros_utils map_common ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(tuw_gazebo_ros_map tuw_gazebo_ros_utils map_common ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_odom src/gazebo_ros_odom.cpp)
-target_link_libraries(tuw_gazebo_ros_odom tuw_gazebo_ros_utils ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-
+target_link_libraries(tuw_gazebo_ros_odom tuw_gazebo_ros_utils ${DEP_LIBS})
 
 add_library(tuw_gazebo_ros_joint_state_publisher src/gazebo_ros_joint_state_publisher.cpp)
 set_target_properties(tuw_gazebo_ros_joint_state_publisher PROPERTIES LINK_FLAGS "${ld_flags}")

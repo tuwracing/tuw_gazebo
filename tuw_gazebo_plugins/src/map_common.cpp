@@ -5,14 +5,14 @@ namespace gazebo {
 double getConeColorShapeVariable(physics::ModelPtr cone) {
   if (cone->GetScopedName(false).find("cone_blue") != std::string::npos ||
       cone->GetScopedName(false).find("cone_l") != std::string::npos) {
-    return coneColorBlue;
+    return TrafficCone::coneColorBlue;
   } else if (cone->GetScopedName(false).find("cone_yellow") != std::string::npos ||
              cone->GetScopedName(false).find("cone_r") != std::string::npos) {
-    return coneColorYellow;
+    return TrafficCone::coneColorYellow;
   } else if (cone->GetScopedName(false).find("cone") != std::string::npos) {
-    return coneColorRed;
+    return TrafficCone::coneColorRed;
   }
-  return coneColorUnknown;
+  return TrafficCone::coneColorUnknown;
 }
 
 bool isInRangeOf(const ignition::math::Vector3d &conePos,

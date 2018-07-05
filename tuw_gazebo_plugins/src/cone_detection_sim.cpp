@@ -2,16 +2,20 @@
 #include <cstdlib>
 #include <ctime>
 
-namespace gazebo {
+namespace gazebo
+{
+  namespace math = ignition::math;
 
 ConeDetectionSim::ConeDetectionSim() {}
 
-ConeDetectionSim::~ConeDetectionSim() {
+ConeDetectionSim::~ConeDetectionSim()
+{
   pub_queue_.reset();
   pub_.shutdown();
 }
 
-void ConeDetectionSim::ParseOpt() {
+void ConeDetectionSim::ParseOpt()
+{
   gazebo_ros_->getParameter<std::string>(options_.nodeHandleName,
                                          "nodeHandleName", "");
 
@@ -33,11 +37,16 @@ void ConeDetectionSim::ParseOpt() {
   gazebo_ros_->getParameter<double>(options_.detectionConfig.fovVerticalDeg,
                                     "fovVerticalDeg", 0.0);
 
-  noiseX_.loadParam(gazebo_ros_->Sdf()->GetElement("detection_noise"));
-  noiseY_.loadParam(gazebo_ros_->Sdf()->GetElement("detection_noise"));
+  if (gazebo_ros_->Sdf()->HasElement("detection_noise"))
+  {
+    auto noise = gazebo_ros_->Sdf()->GetElement("detection_noise");
+    noiseX_.loadParam(noise);
+    noiseY_.loadParam(noise);
+  }
 }
 
-void ConeDetectionSim::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
+void ConeDetectionSim::Load(physics::ModelPtr parent, sdf::ElementPtr sdf)
+{
   parent_ = parent;
   gazebo_ros_ = GazeboRosPtr(new GazeboRos(parent, sdf, "ConeDetectionSim"));
   gazebo_ros_->isInitialized();
@@ -46,6 +55,8 @@ void ConeDetectionSim::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
   rosNode_.reset(new ros::NodeHandle(options_.nodeHandleName));
   pub_ = rosNode_->advertise<tuw_object_msgs::ObjectDetection>(
       options_.topicName, 1);
+  ROS_INFO("%s: Advertising on %s", gazebo_ros_->info(), options_.topicName.c_str());
+
   pub_multi_queue_.startServiceThread();
   pub_queue_ = pub_multi_queue_.addPub<tuw_object_msgs::ObjectDetection>();
 
@@ -58,20 +69,18 @@ void ConeDetectionSim::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
   reconfigureFnc_ =
       boost::bind(&ConeDetectionSim::callbackConfig, this, _1, _2);
   reconfigureServer_->setCallback(reconfigureFnc_);
-
-  std::srand(std::time(0));
 }
 
 void ConeDetectionSim::callbackConfig(
-    tuw_gazebo_plugins::ConeDetectionSimConfig &_config, uint32_t _level) {
+    tuw_gazebo_plugins::ConeDetectionSimConfig &_config, uint32_t _level)
+{
   config_ = _config;
   ROS_DEBUG("%s: callbackConfig!", gazebo_ros_->info());
 }
 
-double degToRad(double deg) { return deg / 180 * M_PI; }
-
 void ConeDetectionSim::setVisualDetectionCovariance(
-    tuw_object_msgs::ObjectWithCovariance &owc) {
+    tuw_object_msgs::ObjectWithCovariance &owc)
+{
   double pxHeight = 360.0;
   double pxWidth = 1280.0;
   // measured average pixel error of visual cone detection
@@ -79,21 +88,25 @@ void ConeDetectionSim::setVisualDetectionCovariance(
   // TODO by configuration, maximum range of the camera
   double maxRange = 20;
   // horizontal fov of the camera
-  double radFov = degToRad(90);
-  double bearingErrPerPxAtMaxRange = degToRad(10);
+
+  math::Angle fov;
+  fov.Degree(90.);
+  math::Angle bearingErrPerPxAtMaxRange;
+  bearingErrPerPxAtMaxRange.Degree(10.);
 
   // + 1 due to sampling noise
   double rangeNoise = maxRange / pxHeight * (pxErr + 1);
-  double bearingNoise = radFov / pxWidth * (pxErr + 1);
+  double bearingNoise = fov.Radian() / pxWidth * (pxErr + 1);
 
   double fps = 30;
   double dt = 1 / fps;
-  double frameGrabDelayRangeNoise = dt * 5;  // TODO use speed measurement
+  double frameGrabDelayRangeNoise = dt * 5; // TODO use speed measurement
 
-  double corr = bearingErrPerPxAtMaxRange / maxRange;
+  double corr = bearingErrPerPxAtMaxRange.Radian() / maxRange;
 
   owc.covariance_pose.resize(9);
-  for (size_t i = 0; i < 9; i++) {
+  for (size_t i = 0; i < 9; i++)
+  {
     owc.covariance_pose[i] = 0.0;
   }
 
@@ -110,12 +123,14 @@ void ConeDetectionSim::setVisualDetectionCovariance(
   owc.covariance_pose[8] = 1.0;
 }
 
-void ConeDetectionSim::Update() {
+void ConeDetectionSim::Update()
+{
   common::Time current_time = parent_->GetWorld()->SimTime();
   double dt = (current_time - last_update_time_).Double();
 
   update_period_ = 1.0 / config_.fps;
-  if (dt < update_period_) {
+  if (dt < update_period_)
+  {
     return;
   }
   last_update_time_ = current_time;
@@ -128,9 +143,11 @@ void ConeDetectionSim::Update() {
   ignition::math::Pose3d robotPose = parent_->WorldPose();
   double robotX = robotPose.Pos().X(), robotY = robotPose.Pos().Y();
 
-  for (physics::ModelPtr cone : cones_) {
+  for (physics::ModelPtr cone : cones_)
+  {
     double r = ((double)std::rand()) / RAND_MAX;
-    if (r <= config_.p_detection) {
+    if (r <= config_.p_detection)
+    {
       auto conePosition = cone->WorldPose().Pos();
 
       double x = conePosition.X() - robotX;
@@ -186,4 +203,4 @@ void ConeDetectionSim::Update() {
 }
 
 GZ_REGISTER_MODEL_PLUGIN(ConeDetectionSim)
-}
+} // namespace gazebo

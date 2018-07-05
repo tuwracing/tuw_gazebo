@@ -52,7 +52,6 @@ GazeboRosLaser::GazeboRosLaser()
 // Destructor
 GazeboRosLaser::~GazeboRosLaser()
 {
-  // parent_ray_sensor_->DisconnectUpdated(laser_connection_);
   pub_queue_.reset();
   for (auto& ros_pub_laserI : ros_pub_laser_)
   {
@@ -125,7 +124,6 @@ void GazeboRosLaser::LaserDisconnect()
 {
   if (--laser_connect_count_ == 0)
   {
-    // parent_ray_sensor_->DisconnectUpdated(laser_connection_);
     this->parent_ray_sensor_->SetActive(false);
   }
   if (laser_connect_count_ < 0)

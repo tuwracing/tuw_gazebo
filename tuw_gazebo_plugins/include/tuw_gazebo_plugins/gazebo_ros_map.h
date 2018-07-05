@@ -1,5 +1,4 @@
-#ifndef GAZEBO_ROS_MAP_H
-#define GAZEBO_ROS_MAP_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -20,6 +19,13 @@
 
 namespace gazebo {
 
+namespace ReferenceFrame {
+  typedef enum {
+    MAP,
+    ROBOT
+  } ReferenceFrame;
+}
+
 typedef struct {
 
   std::string nodeHandleName;
@@ -27,6 +33,8 @@ typedef struct {
   std::string topicName;
 
   std::string frameId;
+
+  ReferenceFrame::ReferenceFrame referenceFrame;
 
   double updateRate;
 
@@ -45,6 +53,9 @@ public:
 private:
   void ParseOpt();
   void Update();
+  void toObjectWithCovariance(
+    physics::ModelPtr &cone,
+    tuw_object_msgs::ObjectWithCovariance &owc);
 
   physics::ModelPtr parent_;
   GazeboRosPtr gazebo_ros_;
@@ -55,12 +66,11 @@ private:
 
   std::unique_ptr<ros::NodeHandle> rosNode_;
   PubMultiQueue pub_multi_queue_;
-  PubQueue<tuw_object_msgs::ObjectWithCovarianceArray>::Ptr pub_queue_;
   ros::Publisher pub_;
+  PubQueue<tuw_object_msgs::ObjectDetection>::Ptr pubQueue_robot_;
+  PubQueue<tuw_object_msgs::ObjectWithCovarianceArray>::Ptr pubQueue_map_;
 
   std::vector<physics::ModelPtr> cones_;
   GazeboRosMapOptions options_;
 };
 }
-
-#endif // GAZEBO_ROS_CONES_GROUNDTRUTH_PUBLISHER

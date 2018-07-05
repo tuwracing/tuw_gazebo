@@ -44,23 +44,25 @@
 
 namespace gazebo
 {
-    
-    
+
 /**
 * Accessing model name like suggested by nkoenig at http://answers.gazebosim.org/question/4878/multiple-robots-with-ros-plugins-sensor-plugin-vs/
 * @param parent
 * @return accessing model name
 **/
-inline std::string GetModelName ( const sensors::SensorPtr &parent )
+inline std::string GetModelName(const sensors::SensorPtr &parent)
 {
     std::string modelName;
     std::vector<std::string> values;
     std::string scopedName = parent->ScopedName();
-    boost::replace_all ( scopedName, "::", "," );
-    boost::split ( values, scopedName, boost::is_any_of ( "," ) );
-    if ( values.size() < 2 ) {
+    boost::replace_all(scopedName, "::", ",");
+    boost::split(values, scopedName, boost::is_any_of(","));
+    if (values.size() < 2)
+    {
         modelName = "";
-    } else {
+    }
+    else
+    {
         modelName = values[1];
     }
     return modelName;
@@ -73,24 +75,27 @@ inline std::string GetModelName ( const sensors::SensorPtr &parent )
 * @param pInfo
 * @return node namespace
 **/
-inline std::string GetRobotNamespace ( const sensors::SensorPtr &parent, const sdf::ElementPtr &sdf, const char *pInfo = NULL )
+inline std::string GetRobotNamespace(const sensors::SensorPtr &parent, const sdf::ElementPtr &sdf, const char *pInfo = NULL)
 {
     std::string name_space;
     std::stringstream ss;
-    if ( sdf->HasElement ( "robotNamespace" ) ) {
-        name_space = sdf->Get<std::string> ( "robotNamespace" );
-        if ( name_space.empty() ) {
+    if (sdf->HasElement("robotNamespace"))
+    {
+        name_space = sdf->Get<std::string>("robotNamespace");
+        if (name_space.empty())
+        {
             ss << "the 'robotNamespace' param was empty";
-            name_space = GetModelName ( parent );
-        } else {
-            ss << "Using the 'robotNamespace' param: '" <<  name_space << "'";
+            name_space = GetModelName(parent);
         }
-    } else {
+        else
+        {
+            ss << "Using the 'robotNamespace' param: '" << name_space << "'";
+        }
+    }
+    else
+    {
         ss << "the 'robotNamespace' param did not exit";
     }
-//     if ( pInfo != NULL ) {
-//         ROS_INFO ( "%s Plugin (robotNamespace = %s), Info: %s" , pInfo, name_space.c_str(), ss.str().c_str() );
-//     }
     return name_space;
 }
 
@@ -101,20 +106,21 @@ inline std::string GetRobotNamespace ( const sensors::SensorPtr &parent, const s
  **/
 class GazeboRos
 {
-private:
-    sdf::ElementPtr base_sdf_;  /// base sdf
-    sdf::ElementPtr sdf_;       /// sdf to read
-    std::string plugin_;        /// name of the plugin class
-    std::string namespace_;     /// name of the launched node
+  private:
+    sdf::ElementPtr base_sdf_;                   /// base sdf
+    sdf::ElementPtr sdf_;                        /// sdf to read
+    std::string plugin_;                         /// name of the plugin class
+    std::string namespace_;                      /// name of the launched node
     boost::shared_ptr<ros::NodeHandle> rosnode_; /// rosnode
-    std::string tf_prefix_;     /// prefix for the ros tf plublisher if not set it uses the namespace_
-    std::string info_text;      /// info text for log messages to identify the node
+    std::string tf_prefix_;                      /// prefix for the ros tf plublisher if not set it uses the namespace_
+    std::string info_text;                       /// info text for log messages to identify the node
     boost::mutex lock_;
     /**
      * Reads the common plugin parameters used by the constructor
      **/
-    void readCommonParameter ();
-public:
+    void readCommonParameter();
+
+  public:
     /**
      * Constructor
      * @param _parent models parent
@@ -122,27 +128,44 @@ public:
      * @param _name of the plugin class
      * @param _internalNS specifies weather the namespace is nested under /gazebo or not; defaults to false
      **/
-    GazeboRos ( physics::ModelPtr &_parent, sdf::ElementPtr _sdf, const std::string &_plugin, bool _internalNS=false )
-        : base_sdf_( _sdf ), sdf_ ( _sdf ), plugin_ ( _plugin ) {
-        namespace_ = _parent->GetName ();
-        if ( !sdf_->HasElement ( "robotNamespace" ) ) {
-            ROS_INFO_NAMED (plugin_.c_str(), "%s missing <robotNamespace>, defaults is %s", plugin_.c_str(), namespace_.c_str() );
-        }  else {
-            namespace_ = sdf_->GetElement ( "robotNamespace" )->Get<std::string>();
-            if ( namespace_.empty() ) { namespace_ = _parent->GetName(); }
+    GazeboRos(physics::ModelPtr &_parent, sdf::ElementPtr _sdf, const std::string &_plugin, bool _internalNS = false)
+        : base_sdf_(_sdf), sdf_(_sdf), plugin_(_plugin)
+    {
+        namespace_ = _parent->GetName();
+        if (!sdf_->HasElement("robotNamespace"))
+        {
+            ROS_DEBUG_NAMED(plugin_.c_str(), "%s missing <robotNamespace>, defaults is %s", plugin_.c_str(), namespace_.c_str());
         }
-        if ( !namespace_.empty() ){ namespace_ += "/"; }
-	if(_internalNS) { rosnode_ = boost::shared_ptr<ros::NodeHandle> ( new ros::NodeHandle ( "~/" + namespace_ ) ); }
-	else            { rosnode_ = boost::shared_ptr<ros::NodeHandle> ( new ros::NodeHandle (        namespace_ ) ); }
+        else
+        {
+            namespace_ = sdf_->GetElement("robotNamespace")->Get<std::string>();
+            if (namespace_.empty())
+            {
+                namespace_ = _parent->GetName();
+            }
+        }
+        if (!namespace_.empty())
+        {
+            namespace_ += "/";
+        }
+        if (_internalNS)
+        {
+            rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle("~/" + namespace_));
+        }
+        else
+        {
+            rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(namespace_));
+        }
         info_text = plugin_ + "(ns = " + namespace_ + ")";
-        readCommonParameter ();
+        readCommonParameter();
     }
     /**
      * Destructor
      **/
-    virtual ~GazeboRos() {
-	ROS_DEBUG_NAMED(plugin_.c_str(), "-------Destructed plugin %s!-------", plugin_.c_str());
-	rosnode_->shutdown();
+    virtual ~GazeboRos()
+    {
+        ROS_DEBUG_NAMED(plugin_.c_str(), "-------Destructed plugin %s!-------", plugin_.c_str());
+        rosnode_->shutdown();
     }
     /**
      * Constructor
@@ -150,53 +173,72 @@ public:
      * @param _sdf sdf to read
      * @param _name of the plugin class
      **/
-    GazeboRos ( sensors::SensorPtr _parent, sdf::ElementPtr _sdf, const std::string &_plugin, bool _internalNS=false  )
-        : base_sdf_( _sdf ), sdf_ ( _sdf ), plugin_ ( _plugin ) {
-	namespace_ = _parent->Name();
-        if ( !sdf_->HasElement ( "robotNamespace" ) ) {
-            ROS_INFO_NAMED(plugin_.c_str(), "%s missing <robotNamespace>, defaults is %s", plugin_.c_str(), namespace_.c_str() );
-        }  else {
-            namespace_ = sdf_->GetElement ( "robotNamespace" )->Get<std::string>();
-            if ( namespace_.empty() ) { namespace_ = GetModelName(_parent); }
+    GazeboRos(sensors::SensorPtr _parent, sdf::ElementPtr _sdf, const std::string &_plugin, bool _internalNS = false)
+        : base_sdf_(_sdf), sdf_(_sdf), plugin_(_plugin)
+    {
+        namespace_ = _parent->Name();
+        if (!sdf_->HasElement("robotNamespace"))
+        {
+            ROS_DEBUG_NAMED(plugin_.c_str(), "%s missing <robotNamespace>, defaults is %s", plugin_.c_str(), namespace_.c_str());
         }
-        if ( !namespace_.empty() ){ namespace_ += "/"; }
-	if(_internalNS) { rosnode_ = boost::shared_ptr<ros::NodeHandle> ( new ros::NodeHandle ( "~/" + namespace_ ) ); }
-	else            { rosnode_ = boost::shared_ptr<ros::NodeHandle> ( new ros::NodeHandle (        namespace_ ) ); }
+        else
+        {
+            namespace_ = sdf_->GetElement("robotNamespace")->Get<std::string>();
+            if (namespace_.empty())
+            {
+                namespace_ = GetModelName(_parent);
+            }
+        }
+        if (!namespace_.empty())
+        {
+            namespace_ += "/";
+        }
+        if (_internalNS)
+        {
+            rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle("~/" + namespace_));
+        }
+        else
+        {
+            rosnode_ = boost::shared_ptr<ros::NodeHandle>(new ros::NodeHandle(namespace_));
+        }
         info_text = plugin_ + "(ns = " + namespace_ + ")";
-        readCommonParameter ();
+        readCommonParameter();
     }
 
     /**
      * Returns in-use sdf data
      * @return in-use sdf data
      **/
-    sdf::ElementPtr& Sdf() { return sdf_; }
+    sdf::ElementPtr &Sdf() { return sdf_; }
     /**
      * Returns base sdf data
      * @return base sdf data
      **/
-    sdf::ElementPtr& baseSdf() { return base_sdf_; }
+    sdf::ElementPtr &baseSdf() { return base_sdf_; }
     /**
      * Returns info text used for log messages
      * @return class name and node name as string
      **/
-    const char* info() const;
+    const char *info() const;
     /**
      * returns the initialized created within the constuctor
      * @return rosnode
      **/
-    boost::shared_ptr<ros::NodeHandle>& node();;
+    boost::shared_ptr<ros::NodeHandle> &node();
+    ;
     /**
      * returns the initialized within the constuctor
      * @return rosnode
      **/
-    const boost::shared_ptr<ros::NodeHandle>& node() const;
+    const boost::shared_ptr<ros::NodeHandle> &node() const;
     /**
      * resolves a tf frame name by adding the tf_prefix initialized within the constuctor
      * @param _name
      * @retun resolved tf name
      **/
-    std::string resolveTF ( const std::string &_name );
+    std::string resolveTF(const std::string &_name);
+
+    bool hasParameter(const char *_tag_name);
 
     /**
      * reads the follwoing _tag_name paramer or sets a _default value
@@ -205,14 +247,14 @@ public:
      * @param _default
      * @retun sdf tag value
      **/
-    void getParameterBoolean ( bool &_value, const char *_tag_name, const bool &_default );
+    void getParameterBoolean(bool &_value, const char *_tag_name, const bool &_default);
     /**
      * reads the follwoing _tag_name paramer
      * @param _value
      * @param _tag_name
      * @retun sdf tag value
      **/
-    void getParameterBoolean ( bool &_value, const char *_tag_name );
+    void getParameterBoolean(bool &_value, const char *_tag_name);
     /**
      * retuns a JointPtr based on an sdf tag_name entry
      * @param _value
@@ -220,13 +262,12 @@ public:
      * @param _joint_default_name
      * @retun JointPtr
      **/
-    physics::JointPtr getJoint ( physics::ModelPtr &_parent, const char *_tag_name, const std::string &_joint_default_name );
+    physics::JointPtr getJoint(physics::ModelPtr &_parent, const char *_tag_name, const std::string &_joint_default_name);
     /**
      * checks if the ros not is initialized
      * @retun JointPtr
      **/
     void isInitialized();
-
 
     const std::string getPluginName() const;
     const std::string getNamespace() const;
@@ -238,12 +279,16 @@ public:
      * @retun sdf tag value
      **/
     template <class T>
-    void getParameter ( T &_value, const char *_tag_name, const T &_default, bool _debugOutput = true  ) {
+    void getParameter(T &_value, const char *_tag_name, const T &_default, bool _debugOutput = true)
+    {
         _value = _default;
-        if ( !sdf_->HasElement ( _tag_name ) ) {
-            ROS_WARN_NAMED(plugin_.c_str(), "%s: missing <%s> default is %s", info(), _tag_name, boost::lexical_cast<std::string> ( _default ).c_str() );
-        } else {
-            getParameter<T> ( _value, _tag_name, _debugOutput );
+        if (!sdf_->HasElement(_tag_name))
+        {
+            ROS_DEBUG_NAMED(plugin_.c_str(), "%s: missing <%s> default is %s", info(), _tag_name, boost::lexical_cast<std::string>(_default).c_str());
+        }
+        else
+        {
+            getParameter<T>(_value, _tag_name, _debugOutput);
         }
     }
     /**
@@ -254,11 +299,13 @@ public:
      * @retun sdf tag value
      **/
     template <class T>
-    void getParameter ( T &_value, const char *_tag_name, bool _debugOutput = true ) {
-        if ( sdf_->HasElement ( _tag_name ) ) {
-            _value = sdf_->GetElement ( _tag_name )->Get<T>();//TODO: should be Get<T>(_tag_name);
+    void getParameter(T &_value, const char *_tag_name, bool _debugOutput = true)
+    {
+        if (sdf_->HasElement(_tag_name))
+        {
+            _value = sdf_->GetElement(_tag_name)->Get<T>(); //TODO: should be Get<T>(_tag_name);
         }
-        ROS_DEBUG_COND_NAMED(_debugOutput, plugin_.c_str(), "%s: <%s> = %s", info(), _tag_name, boost::lexical_cast<std::string> ( _value ).c_str() );
+        ROS_DEBUG_COND_NAMED(_debugOutput, plugin_.c_str(), "%s: <%s> = %s", info(), _tag_name, boost::lexical_cast<std::string>(_value).c_str());
     }
 
     /**
@@ -269,12 +316,16 @@ public:
      * @retun sdf tag value
      **/
     template <class T>
-    void getParameter ( T &_value, const char *_tag_name, const std::map<std::string, T> &_options, const T &_default, bool _debugOutput = true ) {
+    void getParameter(T &_value, const char *_tag_name, const std::map<std::string, T> &_options, const T &_default, bool _debugOutput = true)
+    {
         _value = _default;
-        if ( !sdf_->HasElement ( _tag_name ) ) {
-            ROS_WARN_NAMED(plugin_.c_str(), "%s: missing <%s> default is %s", info(), _tag_name, boost::lexical_cast<std::string> ( _default ).c_str() );
-        } else {
-            getParameter<T> ( _value, _tag_name, _options, _debugOutput );
+        if (!sdf_->HasElement(_tag_name))
+        {
+            ROS_DEBUG_NAMED(plugin_.c_str(), "%s: missing <%s> default is %s", info(), _tag_name, boost::lexical_cast<std::string>(_default).c_str());
+        }
+        else
+        {
+            getParameter<T>(_value, _tag_name, _options, _debugOutput);
         }
     }
     /**
@@ -285,24 +336,26 @@ public:
      * @retun sdf tag value
      **/
     template <class T>
-    void getParameter ( T &_value, const char *_tag_name, const std::map<std::string, T> &_options, bool _debugOutput = true ) {
-        typename std::map<std::string, T >::const_iterator it;
-        if ( sdf_->HasElement ( _tag_name ) ) {
-            std::string value = sdf_->GetElement ( _tag_name )->Get<std::string>();
-            it = _options.find ( value );
-            if ( it == _options.end() ) {
-                ROS_WARN_NAMED(plugin_.c_str(), "%s: <%s> no matching key to %s", info(), _tag_name, value.c_str() );
-            } else {
+    void getParameter(T &_value, const char *_tag_name, const std::map<std::string, T> &_options, bool _debugOutput = true)
+    {
+        typename std::map<std::string, T>::const_iterator it;
+        if (sdf_->HasElement(_tag_name))
+        {
+            std::string value = sdf_->GetElement(_tag_name)->Get<std::string>();
+            it = _options.find(value);
+            if (it == _options.end())
+            {
+                ROS_WARN_NAMED(plugin_.c_str(), "%s: <%s> no matching key to %s", info(), _tag_name, value.c_str());
+            }
+            else
+            {
                 _value = it->second;
             }
         }
-        ROS_DEBUG_COND_NAMED(_debugOutput,  plugin_.c_str(), "%s: <%s> = %s := %s",  info(), _tag_name, ( it == _options.end() ?"default":it->first.c_str() ), boost::lexical_cast<std::string> ( _value ).c_str() );
+        ROS_DEBUG_COND_NAMED(_debugOutput, plugin_.c_str(), "%s: <%s> = %s := %s", info(), _tag_name, (it == _options.end() ? "default" : it->first.c_str()), boost::lexical_cast<std::string>(_value).c_str());
     }
 };
 
 typedef boost::shared_ptr<GazeboRos> GazeboRosPtr;
-}
+} // namespace gazebo
 #endif
-
-
-

@@ -5,15 +5,18 @@
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 
-namespace gazebo {
+namespace gazebo
+{
 
 GazeboRosOdom::GazeboRosOdom() { pubOdom_.shutdown(); }
 
-GazeboRosOdom::~GazeboRosOdom() {
+GazeboRosOdom::~GazeboRosOdom()
+{
   this->update_connection_.reset();
 }
 
-void GazeboRosOdom::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
+void GazeboRosOdom::Load(physics::ModelPtr parent, sdf::ElementPtr sdf)
+{
   this->parent_ = parent;
   gazebo_ros_ = GazeboRosPtr(new GazeboRos(parent, sdf, "Odom"));
   gazebo_ros_->isInitialized();
@@ -29,8 +32,7 @@ void GazeboRosOdom::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
   lastUpdateTime_ = parent_->GetWorld()->SimTime();
 
   pubOdom_ = gazebo_ros_->node()->advertise<nav_msgs::Odometry>(odomTopic_, 1);
-  ROS_INFO("%s: Advertising odom on %s", gazebo_ros_->info(),
-           odomTopic_.c_str());
+  ROS_INFO("%s: Advertising on %s", gazebo_ros_->info(), odomTopic_.c_str());
 
   this->update_connection_ = event::Events::ConnectWorldUpdateBegin(
       boost::bind(&GazeboRosOdom::UpdateChild, this));
@@ -38,21 +40,25 @@ void GazeboRosOdom::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
 
 void GazeboRosOdom::Init() { gazebo::ModelPlugin::Init(); }
 
-void GazeboRosOdom::Reset() {
+void GazeboRosOdom::Reset()
+{
   gazebo::ModelPlugin::Reset();
   lastUpdateTime_ = parent_->GetWorld()->SimTime();
 }
 
-void GazeboRosOdom::UpdateChild() {
+void GazeboRosOdom::UpdateChild()
+{
   common::Time current_time = parent_->GetWorld()->SimTime();
 
-  if ((current_time - lastUpdateTime_).Double() > updatePeriod_) {
+  if ((current_time - lastUpdateTime_).Double() > updatePeriod_)
+  {
     publishOdometry();
     lastUpdateTime_ = current_time;
   }
 }
 
-void GazeboRosOdom::publishOdometry() {
+void GazeboRosOdom::publishOdometry()
+{
 
   ros::Time current_time = ros::Time::now();
   std::string mapFrame = "map";
@@ -112,4 +118,4 @@ void GazeboRosOdom::publishOdometry() {
 }
 
 GZ_REGISTER_MODEL_PLUGIN(GazeboRosOdom)
-}
+} // namespace gazebo

@@ -1,5 +1,4 @@
-#ifndef TUW_GAZEBO_PLUGINS_MAP_COMMON_H
-#define TUW_GAZEBO_PLUGINS_MAP_COMMON_H
+#pragma once
 
 #include <gazebo/common/common.hh>
 #include <gazebo/gazebo.hh>
@@ -20,10 +19,14 @@ typedef struct {
 
 } DetectionConfig;
 
-const double coneColorUnknown = 0;
-const double coneColorBlue = 1;
-const double coneColorYellow = 2;
-const double coneColorRed = 3;
+namespace TrafficCone {
+  const double coneRadius = 0.2;
+
+  const double coneColorUnknown = 0;
+  const double coneColorBlue = 1;
+  const double coneColorYellow = 2;
+  const double coneColorRed = 3;
+}
 
 double getConeColorShapeVariable(physics::ModelPtr model);
 
@@ -38,4 +41,3 @@ getConesInWorldSeenBy(const physics::WorldPtr &world,
                       const DetectionConfig &cdConfig);
 }
 
-#endif

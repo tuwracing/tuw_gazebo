@@ -11,19 +11,22 @@
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 
-namespace gazebo {
-GazeboRosRWD::GazeboRosRWD() {
+namespace gazebo
+{
+GazeboRosRWD::GazeboRosRWD()
+{
   odometry_publisher_.shutdown();
 
   // from the famous excel table
   leftToeAngles_ = {-32.535, -29.422, -26.304, -23.171, -20.015, -16.827,
-                    -13.597, -10.312, -6.961,  -3.53,   0,       3.648,
-                    7.441,   11.413,  15.608,  20.092,  24.959,  30.368,
-                    36.611,  44.391,  57.063};
+                    -13.597, -10.312, -6.961, -3.53, 0, 3.648,
+                    7.441, 11.413, 15.608, 20.092, 24.959, 30.368,
+                    36.611, 44.391, 57.063};
   steeringAngles_ = {-90, -81, -72, -63, -54, -45, -36, -27, -18, -9, 0,
-                     9,   18,  27,  36,  45,  54,  63,  72,  81,  90};
+                     9, 18, 27, 36, 45, 54, 63, 72, 81, 90};
 
-  if (leftToeAngles_.size() != steeringAngles_.size()) {
+  if (leftToeAngles_.size() != steeringAngles_.size())
+  {
     ROS_ERROR("leftToeAngles_ and steeringAngles_ size differ");
   }
 
@@ -33,8 +36,8 @@ GazeboRosRWD::GazeboRosRWD() {
   brakePressure_ = 0;
 }
 
-GazeboRosRWD::~GazeboRosRWD() {
-  event::Events::DisconnectWorldUpdateBegin(this->update_connection_);
+GazeboRosRWD::~GazeboRosRWD()
+{
 
   cmd_rwd_subscriber_.shutdown();
 
@@ -44,9 +47,10 @@ GazeboRosRWD::~GazeboRosRWD() {
   callback_queue_thread_.join();
 }
 
-void GazeboRosRWD::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
+void GazeboRosRWD::Load(physics::ModelPtr parent, sdf::ElementPtr sdf)
+{
   this->parent_ = parent;
-  gazebo_ros_ = GazeboRosPtr(new GazeboRos(parent, sdf, "TUWRRWDrive"));
+  gazebo_ros_ = GazeboRosPtr(new GazeboRos(parent, sdf, "RWDrive"));
   gazebo_ros_->isInitialized();
 
   aeroModel_.LoadParam(sdf->GetElement("aero"));
@@ -118,37 +122,41 @@ void GazeboRosRWD::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
   baseLink_ = parent_->GetLink(baseLinkName_);
 
   leftSteerPID_ =
-      common::PID(250.0,300.0, 10.0, 1000.0, -1000.0, 1000.0, -1000.0);
+      common::PID(250.0, 300.0, 10.0, 1000.0, -1000.0, 1000.0, -1000.0);
   rightSteerPID_ =
-      common::PID(250.0,300.0, 10.0, 1000.0, -1000.0, 1000.0, -1000.0);
+      common::PID(250.0, 300.0, 10.0, 1000.0, -1000.0, 1000.0, -1000.0);
 
-  if (this->update_rate_ > 0.0) {
+  if (this->update_rate_ > 0.0)
+  {
     this->update_period_ = 1.0 / this->update_rate_;
-  } else {
+  }
+  else
+  {
     this->update_period_ = 0.0;
   }
   last_update_time_ = parent_->GetWorld()->SimTime();
 
   alive_ = true;
 
-  ROS_INFO("%s: Try to subscribe to %s!", gazebo_ros_->info(),
-           command_topic_.c_str());
+  ROS_INFO("%s: Try to subscribe to %s!", gazebo_ros_->info(), command_topic_.c_str());
 
   ros::SubscribeOptions so =
       ros::SubscribeOptions::create<tuw_vehicle_msgs::RWDControl>(
           command_topic_, 1,
           boost::bind(&GazeboRosRWD::cmdRWDCallback, this, _1), ros::VoidPtr(),
           &queue_);
-
   cmd_rwd_subscriber_ = gazebo_ros_->node()->subscribe(so);
+  ROS_INFO("%s: Subscribed to %s!", gazebo_ros_->info(), command_topic_.c_str());
+
   battery_state_publisher_ =
       gazebo_ros_->node()->advertise<tuw_vehicle_msgs::BatteryState>(
           batteryStateTopic_.c_str(), 10);
+  ROS_INFO("%s: Advertising on %s", gazebo_ros_->info(), batteryStateTopic_.c_str());
+  
   chassis_state_ =
       gazebo_ros_->node()->advertise<tuw_vehicle_msgs::ChassisState>(
           chassisStateTopic_.c_str(), 10);
-
-  ROS_INFO("%s: Subscribe to %s!", gazebo_ros_->info(), command_topic_.c_str());
+  ROS_INFO("%s: Advertising on %s", gazebo_ros_->info(), chassisStateTopic_.c_str());
 
   this->callback_queue_thread_ =
       boost::thread(boost::bind(&GazeboRosRWD::QueueThread, this));
@@ -158,12 +166,14 @@ void GazeboRosRWD::Load(physics::ModelPtr parent, sdf::ElementPtr sdf) {
 
 void GazeboRosRWD::Init() { gazebo::ModelPlugin::Init(); }
 
-void GazeboRosRWD::Reset() {
+void GazeboRosRWD::Reset()
+{
   gazebo::ModelPlugin::Reset();
   last_update_time_ = parent_->GetWorld()->SimTime();
 }
 
-void GazeboRosRWD::UpdateChild() {
+void GazeboRosRWD::UpdateChild()
+{
   common::Time current_time = parent_->GetWorld()->SimTime();
   common::Time seconds_since_last_update = (current_time - last_update_time_);
   hvBattery.Update(seconds_since_last_update.Double());
@@ -197,15 +207,18 @@ void GazeboRosRWD::UpdateChild() {
   last_update_time_ = current_time;
 }
 
-double GazeboRosRWD::GetMaxVelocity() {
+double GazeboRosRWD::GetMaxVelocity()
+{
   return TO_RADPS(hvBattery.GetCurrentVoltage() / motorPsiM_) /
          gearTransmission_;
 }
 
-void GazeboRosRWD::WheelForces() {
+void GazeboRosRWD::WheelForces()
+{
   double secSinceUpdate =
       (parent_->GetWorld()->SimTime() - lastRWDTime_).Double();
-  if (secSinceUpdate > 1) {
+  if (secSinceUpdate > 1)
+  {
     // if no rwd received, just stop
     SetWheelForce(leftRearJoint_, 30, 0);
     SetWheelForce(rightRearJoint_, 30, 0);
@@ -221,12 +234,14 @@ void GazeboRosRWD::WheelForces() {
   double leftTorque = torqueLeft_ * powertrainEfficiency_;
   double rightTorque = torqueRight_ * powertrainEfficiency_;
   double resistanceConstant = 5;
-  if (fabs(leftTorque) < 0.1) {
+  if (fabs(leftTorque) < 0.1)
+  {
     double vel = leftRearJoint_->GetVelocity(0);
     leftTorque =
         -resistanceConstant * ignition::math::clamp(vel / 1.0, -1.0, 1.0);
   }
-  if (fabs(rightTorque) < 0.1) {
+  if (fabs(rightTorque) < 0.1)
+  {
     double vel = rightRearJoint_->GetVelocity(0);
     rightTorque =
         -resistanceConstant * ignition::math::clamp(vel / 1.0, -1.0, 1.0);
@@ -238,9 +253,11 @@ void GazeboRosRWD::WheelForces() {
 }
 
 void GazeboRosRWD::SetWheelForce(physics::JointPtr &wheel, double brakeTorque,
-                                 double torque) {
+                                 double torque)
+{
   double vel = wheel->GetVelocity(0);
-  if (ignition::math::isnan(vel)) {
+  if (ignition::math::isnan(vel))
+  {
     vel = 0;
   }
   double smoothing = 1;
@@ -249,7 +266,8 @@ void GazeboRosRWD::SetWheelForce(physics::JointPtr &wheel, double brakeTorque,
   // verhindern
   // Gegenkraft bei Rädern mit Drehzahl < smoothing rad/s verringert
   brakeTorque *= -1 * ignition::math::clamp(vel / smoothing, -1.0, 1.0);
-  if (vel >= maxVelocity_) {
+  if (vel >= maxVelocity_)
+  {
     torque = 0;
   }
   double outTorque = torque + brakeTorque;
@@ -257,7 +275,8 @@ void GazeboRosRWD::SetWheelForce(physics::JointPtr &wheel, double brakeTorque,
   hvBattery.AddDischargeWithMotor(torque, vel);
 }
 
-void GazeboRosRWD::FiniChild() {
+void GazeboRosRWD::FiniChild()
+{
   alive_ = false;
   queue_.clear();
   queue_.disable();
@@ -266,7 +285,8 @@ void GazeboRosRWD::FiniChild() {
 }
 
 void GazeboRosRWD::cmdRWDCallback(
-    const tuw_vehicle_msgs::RWDControl::ConstPtr &rwd) {
+    const tuw_vehicle_msgs::RWDControl::ConstPtr &rwd)
+{
   boost::mutex::scoped_lock scoped_lock(lock);
   torqueLeft_ = rwd->left_torque;
   torqueRight_ = rwd->right_torque;
@@ -275,31 +295,38 @@ void GazeboRosRWD::cmdRWDCallback(
   lastRWDTime_ = parent_->GetWorld()->SimTime();
 }
 
-void GazeboRosRWD::QueueThread() {
+void GazeboRosRWD::QueueThread()
+{
   static const double timeout = 0.01;
 
-  while (alive_ && gazebo_ros_->node()->ok()) {
+  while (alive_ && gazebo_ros_->node()->ok())
+  {
     queue_.callAvailable(ros::WallDuration(timeout));
   }
 }
 
-double GazeboRosRWD::GetLeftToeAngle(double steeringAngle) {
+double GazeboRosRWD::GetLeftToeAngle(double steeringAngle)
+{
   int i, upperIndex, lowerIndex;
   bool upperFound = false;
   double upperSteering = 0, lowerSteering = 0, upperToe = 0, lowerToe = 0;
-  for (i = 0; i < steeringAngles_.size(); i++) {
+  for (i = 0; i < steeringAngles_.size(); i++)
+  {
     upperSteering = steeringAngles_[i];
-    if (upperSteering > steeringAngle) {
+    if (upperSteering > steeringAngle)
+    {
       upperFound = TRUE;
       break;
     }
   }
 
-  if (!upperFound) {
+  if (!upperFound)
+  {
     return TO_RADIANS(leftToeAngles_[steeringAngles_.size() - 1]);
   }
   upperIndex = i;
-  if (1 == i) {
+  if (1 == i)
+  {
     return TO_RADIANS(leftToeAngles_[0]);
   }
   lowerIndex = i - 1;
@@ -313,9 +340,10 @@ double GazeboRosRWD::GetLeftToeAngle(double steeringAngle) {
            (upperToe - lowerToe)));
 }
 
-double GazeboRosRWD::GetRightToeAngle(double steeringAngle) {
+double GazeboRosRWD::GetRightToeAngle(double steeringAngle)
+{
   return -GetLeftToeAngle(-steeringAngle);
 }
 
 GZ_REGISTER_MODEL_PLUGIN(GazeboRosRWD)
-}
+} // namespace gazebo

@@ -51,7 +51,6 @@ GazeboRosGpuLaser::GazeboRosGpuLaser() {
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 GazeboRosGpuLaser::~GazeboRosGpuLaser() {
-  parent_ray_sensor_->DisconnectUpdated(laser_connection_);
   pub_queue_.reset();
   for ( auto& ros_pub_laserI : ros_pub_laser_) { ros_pub_laserI.shutdown(); }
 }
@@ -97,7 +96,7 @@ void GazeboRosGpuLaser::LaserConnect() {
 ////////////////////////////////////////////////////////////////////////////////
 // Decrement count
 void GazeboRosGpuLaser::LaserDisconnect() {
-    if ( --laser_connect_count_ == 0 ) { parent_ray_sensor_->DisconnectUpdated(laser_connection_); }
+    if ( --laser_connect_count_ == 0 ) { parent_ray_sensor_.reset(); }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
