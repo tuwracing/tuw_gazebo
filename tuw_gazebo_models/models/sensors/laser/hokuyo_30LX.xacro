@@ -70,8 +70,6 @@
         </ray>
 
         <plugin name="gazebo_ros_laser_hokuyo_driver" filename="${driver_type}">
-          <rosDebugLevel>Debug</rosDebugLevel>
-          <robotNamespace></robotNamespace>
           <topicName>${topic_names}</topicName>
           <frameName>${frame_names}</frameName>
           <rangeMin>0.1</rangeMin>

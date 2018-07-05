@@ -64,7 +64,6 @@
 
     <gazebo>
       <plugin name="gazebo_ros_imu9dof" filename="libtuw_gazebo_ros_imu9dof.so">
-        <rosDebugLevel>Debug</rosDebugLevel>
         <robotNamespace>${ns}</robotNamespace>
         <updateRate>50.0</updateRate>
         <alwaysOn>true</alwaysOn>
