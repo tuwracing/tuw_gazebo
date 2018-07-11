@@ -75,6 +75,9 @@ private:
 
   tuw::NoiseSimModel noiseX_;
   tuw::NoiseSimModel noiseY_;
+
+  std::default_random_engine generator;
+  std::uniform_real_distribution<double> detection_prob_distribution;
 };
 }
 

@@ -19,13 +19,6 @@
 
 namespace gazebo {
 
-namespace ReferenceFrame {
-  typedef enum {
-    MAP,
-    ROBOT
-  } ReferenceFrame;
-}
-
 typedef struct {
 
   std::string nodeHandleName;
@@ -34,13 +27,10 @@ typedef struct {
 
   std::string frameId;
 
-  ReferenceFrame::ReferenceFrame referenceFrame;
-
   double updateRate;
 
   double objectCovariancePos;
 
-  DetectionConfig detectionConfig;
 } GazeboRosMapOptions;
 
 class GazeboRosMap : public ModelPlugin {
@@ -67,7 +57,6 @@ private:
   std::unique_ptr<ros::NodeHandle> rosNode_;
   PubMultiQueue pub_multi_queue_;
   ros::Publisher pub_;
-  PubQueue<tuw_object_msgs::ObjectDetection>::Ptr pubQueue_robot_;
   PubQueue<tuw_object_msgs::ObjectWithCovarianceArray>::Ptr pubQueue_map_;
 
   std::vector<physics::ModelPtr> cones_;

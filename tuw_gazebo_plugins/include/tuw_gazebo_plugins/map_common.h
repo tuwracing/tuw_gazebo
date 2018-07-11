@@ -30,14 +30,6 @@ namespace TrafficCone {
 
 double getConeColorShapeVariable(physics::ModelPtr model);
 
-bool isInRangeOf(const ignition::math::Vector3d &conePos,
-                 physics::ModelPtr model, const DetectionConfig &cdConfig);
-
 std::vector<physics::ModelPtr> getConesInWorld(const physics::WorldPtr &world);
-
-std::vector<physics::ModelPtr>
-getConesInWorldSeenBy(const physics::WorldPtr &world,
-                      const physics::ModelPtr &robot,
-                      const DetectionConfig &cdConfig);
 }
 

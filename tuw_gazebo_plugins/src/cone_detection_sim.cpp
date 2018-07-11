@@ -1,12 +1,13 @@
 #include <tuw_gazebo_plugins/cone_detection_sim.h>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 
 namespace gazebo
 {
   namespace math = ignition::math;
 
-ConeDetectionSim::ConeDetectionSim() {}
+ConeDetectionSim::ConeDetectionSim() : detection_prob_distribution(0.0, 1.0) {}
 
 ConeDetectionSim::~ConeDetectionSim()
 {
@@ -123,6 +124,35 @@ void ConeDetectionSim::setVisualDetectionCovariance(
   owc.covariance_pose[8] = 1.0;
 }
 
+static bool isInRangeOf(
+  const math::Vector3d &conePos,
+  const math::Pose3d &sensorPose,
+  const DetectionConfig &cdConfig) {
+    
+  math::Vector3d relative = conePos - sensorPose.Pos();
+  double len = relative.Length();
+  if (len > cdConfig.distanceMax) {
+    return false;
+  }
+  if (len < cdConfig.distanceMin) {
+    return false;
+  }
+
+  math::Quaternion<double> rot = sensorPose.Rot();
+  double yaw = rot.Yaw();
+  double thetaToCone = atan2(relative.Y(), relative.X());
+
+  double maxDeg = cdConfig.fovHorizontalDeg / 2;
+  double distRad = std::abs(thetaToCone - yaw);
+  double distDeg = distRad * 180 / M_PI;
+
+  if (distDeg > maxDeg) {
+    return false;
+  }
+
+  return true;
+}
+
 void ConeDetectionSim::Update()
 {
   common::Time current_time = parent_->GetWorld()->SimTime();
@@ -135,26 +165,26 @@ void ConeDetectionSim::Update()
   }
   last_update_time_ = current_time;
 
-  cones_ = getConesInWorldSeenBy(parent_->GetWorld(), parent_,
-                                 options_.detectionConfig);
-
+  cones_ = getConesInWorld(parent_->GetWorld());
   tuw_object_msgs::ObjectDetection od;
 
-  ignition::math::Pose3d robotPose = parent_->WorldPose();
-  double robotX = robotPose.Pos().X(), robotY = robotPose.Pos().Y();
+  math::Pose3d robotPose = parent_->WorldPose();
 
   for (physics::ModelPtr cone : cones_)
   {
-    double r = ((double)std::rand()) / RAND_MAX;
-    if (r <= config_.p_detection)
+    auto pos = robotPose.Pos();
+    auto rot = robotPose.Rot();
+    if (!isInRangeOf(cone->WorldPose().Pos(), robotPose, options_.detectionConfig)) {
+      continue;
+    }
+
+    if (detection_prob_distribution(generator) <= config_.p_detection)
     {
-      auto conePosition = cone->WorldPose().Pos();
+      math::Vector3d relConePos = cone->WorldPose().Pos() - robotPose.Pos();
+      relConePos = robotPose.Rot().Inverse().RotateVector(relConePos);
 
-      double x = conePosition.X() - robotX;
-      double y = conePosition.Y() - robotY;
-
-      x = noiseX_.sim(x, dt);
-      y = noiseY_.sim(y, dt);
+      double x = noiseX_.sim(relConePos.X(), dt);
+      double y = noiseY_.sim(relConePos.Y(), dt);
 
       tuw_object_msgs::ObjectWithCovariance owc;
       tuw_object_msgs::Object object;
