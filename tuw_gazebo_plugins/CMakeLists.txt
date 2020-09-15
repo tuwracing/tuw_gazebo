@@ -30,6 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_msgs
   tuw_object_msgs
   tuw_vehicle_msgs
+  tuw_nav_msgs
 )
 
 include (FindPkgConfig)

@@ -315,7 +315,7 @@ double GazeboRosRWD::GetLeftToeAngle(double steeringAngle)
     upperSteering = steeringAngles_[i];
     if (upperSteering > steeringAngle)
     {
-      upperFound = TRUE;
+      upperFound = true;
       break;
     }
   }

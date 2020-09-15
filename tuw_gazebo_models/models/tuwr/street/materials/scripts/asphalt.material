@@ -1,5 +1,7 @@
 material vrc/asphalt
 {
+	receive_shadows on
+
 	technique
 	{
 		pass

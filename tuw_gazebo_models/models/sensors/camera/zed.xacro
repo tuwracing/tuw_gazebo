@@ -37,11 +37,12 @@
     </gazebo>
 
     <gazebo reference="${name}">
-      <sensor type="camera" name="${name}_left">
+      <sensor type="multicamera" name="${name}">
         <update_rate>30.0</update_rate>
-        <camera name="head">
-          <pose>0 0 0 0 0 0</pose>
-          <horizontal_fov>1.7</horizontal_fov>
+
+        <camera name="left">
+          <pose>0 0.06 0 0 0 0</pose>
+          <horizontal_fov>1.6</horizontal_fov>
           <image>
             <width>1280</width>
             <height>720</height>
@@ -53,14 +54,31 @@
           </clip>
           <noise>
             <type>gaussian</type>
-            <!-- Noise is sampled independently per pixel on each frame.
-               That pixel's noise value is added to each of its color
-               channels, which at that point lie in the range [0,1]. -->
             <mean>0.0</mean>
             <stddev>0.007</stddev>
           </noise>
         </camera>
-        <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+
+        <camera name="right">
+          <pose>0 -0.06 0 0 0 0</pose>
+          <horizontal_fov>1.6</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>720</height>
+            <format>B8G8R8</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+
+        <!-- <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
           <robotNamespace>${robot_ns}</robotNamespace>
           <alwaysOn>false</alwaysOn>
           <updateRate>30.0</updateRate>
@@ -69,6 +87,22 @@
           <cameraInfoTopicName>left/camera_info</cameraInfoTopicName>
           <frameName>${frame_name}/left_frame</frameName>
           <hackBaseline>0.06</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin> -->
+
+        <plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera.so">
+          <alwaysOn>false</alwaysOn>
+          <updateRate>30.0</updateRate>
+          <cameraName>${name}</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>${frame_name}/left_frame</frameName>
+          <rightFrameName>${frame_name}/right_frame</rightFrameName>
+          <hackBaseline>0.12</hackBaseline>
           <distortionK1>0.0</distortionK1>
           <distortionK2>0.0</distortionK2>
           <distortionK3>0.0</distortionK3>

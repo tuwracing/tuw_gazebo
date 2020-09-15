@@ -84,6 +84,7 @@ void ConeDetectionSim::setVisualDetectionCovariance(
 {
   double pxHeight = 360.0;
   double pxWidth = 1280.0;
+
   // measured average pixel error of visual cone detection
   double pxErr = 5.0;
   // TODO by configuration, maximum range of the camera
@@ -95,7 +96,7 @@ void ConeDetectionSim::setVisualDetectionCovariance(
   math::Angle bearingErrPerPxAtMaxRange;
   bearingErrPerPxAtMaxRange.Degree(10.);
 
-  // + 1 due to sampling noise
+  // + 1 due to rounding to nearest pixel
   double rangeNoise = maxRange / pxHeight * (pxErr + 1);
   double bearingNoise = fov.Radian() / pxWidth * (pxErr + 1);
 
@@ -106,17 +107,14 @@ void ConeDetectionSim::setVisualDetectionCovariance(
   double corr = bearingErrPerPxAtMaxRange.Radian() / maxRange;
 
   owc.covariance_pose.resize(9);
-  for (size_t i = 0; i < 9; i++)
-  {
-    owc.covariance_pose[i] = 0.0;
-  }
+  std::fill(owc.covariance_pose.begin(), owc.covariance_pose.end(), 0);
 
   double rang = config_.sig_range * (rangeNoise + frameGrabDelayRangeNoise);
   double brng = config_.sig_bearing * bearingNoise;
 
-  // 0 1 2     (0) (1)  -
-  // x x 0 --> (3) (4)  -
-  // x x 0      -   -  (8)
+  // (0) (1)  -
+  // (3) (4)  -
+  //  -   -  (8)
   owc.covariance_pose[0] = rang;
   owc.covariance_pose[1] = config_.sig_correlation * corr;
   owc.covariance_pose[3] = config_.sig_correlation * corr;
